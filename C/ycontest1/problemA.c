@@ -42,7 +42,8 @@
 typedef signed char s8;
 
 // Using inlines to get rid of
-// unnecessary calls
+// unnecessary calls and
+// get remove recalculations
 
 static inline int max(int a, int b) {
   return a > b ? a : b;
@@ -77,21 +78,21 @@ int main() {
 
   s8 t_res = t_room;
 
-  switch (mode_buf[0]) {
-    case 'a':
-      if (t_room > t_cond) {
-        goto freeze_label;
-      }
-    case 'h':
-      t_res = max(t_room, t_cond);
-      break;
-    case 'f':
-      if (mode_buf[1] == 'a') {
+  // filter the f[a]n mode
+  if (mode_buf[1] != 'a') {
+    switch (mode_buf[0]) {
+      case 'a':
+        if (t_room > t_cond) {
+          goto freeze_label;
+        }
+      case 'h':
+        t_res = max(t_room, t_cond);
         break;
-      }
-    freeze_label:
-      t_res = min(t_room, t_cond);
-      break;
+      case 'f':
+      freeze_label:
+        t_res = min(t_room, t_cond);
+        break;
+    }
   }
 
   printf("%d\n", t_res);
