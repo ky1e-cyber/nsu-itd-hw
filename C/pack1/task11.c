@@ -6,7 +6,7 @@
 // function call
 
 static inline uint64_t count_cubes(uint32_t n) {
-  uint32_t cbr_n = (uint32_t)cbrtf(n);
+  const uint32_t cbr_n = (uint32_t)cbrtf(n);
 
   uint64_t count = 0;
   for (uint32_t i = 1; i <= cbr_n ; i++) {
