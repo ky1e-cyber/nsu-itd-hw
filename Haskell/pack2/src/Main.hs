@@ -3,6 +3,10 @@ module Main where
 import Data.Ratio
 import Numeric.Natural
 
+assert :: Bool -> ()
+assert False = error "assertion failed!"
+assert True = () 
+
 data Segment = Segment
   { start :: Double,
     end :: Double
@@ -71,4 +75,14 @@ arctanTaylorEps x eps =
    in seriesTail x 1
 
 main :: IO ()
-main = print (fib 35)
+main = do
+  let f x = 2 ** x - x ^ 2
+      eps = 0.001
+      seg1 = Segment {start = -1, end = 1}
+      seg2 = Segment {start = 1, end = 3}
+      seg3 = Segment {start = 3, end = 5} 
+      
+    -- in assert ((solver f seg1 eps) - (2 * logBase 2 (-x) )
+  
+
+  return ()
