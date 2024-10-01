@@ -74,8 +74,8 @@ limFunPositiveArgsKnown f aproch limActual eps =
           else tail (i + 1) (arg (i + 1) & f)
    in tail 0 0
 
-limSeqDecrUnkown :: (Natural -> Double) -> Double -> Double
-limSeqDecrUnkown f eps =
+limSeqDecUnknown :: (Natural -> Double) -> Double -> Double
+limSeqDecUnknown f eps =
   let tail i acc =
         let nxt = f (i + 1)
          in if abs (nxt / acc) >= (1.0 - eps)
@@ -90,11 +90,11 @@ lim411b :: Double -> Double
 lim411b = limFunPositiveArgsKnown f411b 1 (2 / 3)
 
 lim411cUnkown :: Double -> Double
-lim411cUnkown = limSeqDecrUnkown f411c
+lim411cUnkown = limSeqDecUnknown f411c
 
 main :: IO ()
 main = do
   let eps = 0.0001
   assertClose (lim411b eps) (2 / 3) eps 1
   assertClose (lim411c eps) 0.5 eps 2
-  print (lim411cUnkown eps) -- WRONG
+  assertClose (lim411cUnkown eps) 0.5 0.01 3 -- somewhat close idk

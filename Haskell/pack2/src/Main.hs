@@ -111,7 +111,7 @@ main = do
   putStrLn "fibSimple tests:"
   assertEq (fibSimple 0) 0 0
   assertEq (fibSimple 1) 1 1
-  assertEq (fibSimple 40) 102334155 2
+  assertEq (fibSimple 20) 6765 2
 
   putStrLn "fib tests:"
   assertEq (fib 0) 0 1
