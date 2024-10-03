@@ -34,17 +34,17 @@ listEq lst1 lst2 =
 pythagoreanTriples :: [(Natural, Natural, Natural)]
 pythagoreanTriples =
   [ (x, y, c)
-  | x <- [1 ..],
-    y <- [1 ..],
-    c <- [1 ..],
+  | c <- [1 ..],
+    x <- [1 .. c],
+    y <- [1 .. c],
     x ^ 2 + y ^ 2 == c ^ 2
   ]
 
 primitivePythagoreanTriples :: [(Natural, Natural, Natural)]
 primitivePythagoreanTriples =
-  let skip_coprimes n = [x | x <- [1 ..], x `mod` n /= 0]
-      skip_coprimes2 n1 n2 = [x | x <- [1 ..], x `mod` n1 /= 0, x `mod` n2 /= 0]
-   in [(x, y, c) | x <- [1 ..], y <- skip_coprimes x, c <- skip_coprimes2 x y, x ^ 2 + y ^ 2 == c ^ 2]
+  let skip_coprimes coprime end = [x | x <- [1 .. end], x `gcd` coprime /= 1]
+      skip_coprimes2 coprime1 coprime2 end = [x | x <- [1 .. end], x `gcd` coprime1 /= 1, x `gcd` coprime2 /= 1]
+   in [(x, y, c) | c <- [1 ..], x <- [1 .. c], y <- skip_coprimes2 x c c, x ^ 2 + y ^ 2 == c ^ 2]
 
 perfectNumbers :: [Natural]
 perfectNumbers =
@@ -80,4 +80,19 @@ main = do
   testEq (listEq (repeat 1) ([1, 1, 1, 1] ++ [1 ..])) False 3
   putStrLn "pythagoreanTriples tests:"
   let isPythTripple (x, y, c) = x ^ 2 + y ^ 2 == c ^ 2
+  testEq (foldr (&&) True (map isPythTripple (take 10 pythagoreanTriples))) True 1
+  putStrLn "primitivePythagoreanTriples tests:"
+  let areCoprimes (x, y, c) = (x `gcd` y `gcd` c) == 1
+  testEq
+    ( foldr
+        (&&)
+        True
+        ( map
+            (\x -> isPythTripple x && areCoprimes x)
+            (take 10 primitivePythagoreanTriples)
+        )
+    )
+    True
+    1
+
   return ()
