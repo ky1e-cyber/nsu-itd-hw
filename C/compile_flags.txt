@@ -1,1 +1,1 @@
--std=c99 -Wall -Wextra -Wfloat-equal -fsanitize=undefined -fsanitize=address
+-std=c99 -Wall -Wextra -Wfloat-equal -g -fsanitize=undefined -fsanitize=address
