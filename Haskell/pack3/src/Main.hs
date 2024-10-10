@@ -40,11 +40,11 @@ pythagoreanTriples =
     x ^ 2 + y ^ 2 == c ^ 2
   ]
 
-primitivePythagoreanTriples :: [(Natural, Natural, Natural)]
-primitivePythagoreanTriples =
-  let skip_coprimes coprime end = [x | x <- [1 .. end], x `gcd` coprime /= 1]
-      skip_coprimes2 coprime1 coprime2 end = [x | x <- [1 .. end], x `gcd` coprime1 /= 1, x `gcd` coprime2 /= 1]
-   in [(x, y, c) | c <- [1 ..], x <- [1 .. c], y <- skip_coprimes2 x c c, x ^ 2 + y ^ 2 == c ^ 2]
+-- primitivePythagoreanTriples :: [(Natural, Natural, Natural)]
+-- primitivePythagoreanTriples =
+-- let skip_coprimes coprime end = [x | x <- [1 .. end], x `gcd` coprime /= 1]
+-- skip_coprimes2 coprime1 coprime2 end = [x | x <- [1 .. end], x `gcd` coprime1 /= 1, x `gcd` coprime2 /= 1]
+-- in [(x, y, c) | c <- [1 ..], x <- skip_coprimes c c, y <- skip_coprimes2 x c c, x ^ 2 + y ^ 2 == c ^ 2]
 
 perfectNumbers :: [Natural]
 perfectNumbers =
@@ -80,19 +80,18 @@ main = do
   testEq (listEq (repeat 1) ([1, 1, 1, 1] ++ [1 ..])) False 3
   putStrLn "pythagoreanTriples tests:"
   let isPythTripple (x, y, c) = x ^ 2 + y ^ 2 == c ^ 2
-  testEq (foldr (&&) True (map isPythTripple (take 10 pythagoreanTriples))) True 1
-  putStrLn "primitivePythagoreanTriples tests:"
-  let areCoprimes (x, y, c) = (x `gcd` y `gcd` c) == 1
-  testEq
-    ( foldr
-        (&&)
-        True
-        ( map
-            (\x -> isPythTripple x && areCoprimes x)
-            (take 10 primitivePythagoreanTriples)
-        )
-    )
-    True
-    1
+  testEq (foldr (&&) True (map isPythTripple (take 20 pythagoreanTriples))) True 1
+
+  let isPerfect x = x == sum [d | d <- [1 .. x - 1], x `mod` d == 0]
+  putStrLn "perfectNumbers tests:"
+  testEq (foldr (&&) True (map isPerfect (take 20 perfectNumbers))) True 1
+
+  putStrLn "cantorPairs tests:"
+  testEq (take 6 cantorPairs) [(0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (2, 0)] 1
+
+  putStrLn "minNorm tests"
+
+  testEq (minNorm [(0.0, 0.001), (pi, 42.0), (-1.0, -1.0)]) 0.0 1
+  testEq (minNorm [(0.0, 0.0), (0.0, 0.0), (-1.0, -1.0)]) 0.0 2
 
   return ()
