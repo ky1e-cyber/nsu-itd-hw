@@ -31,26 +31,8 @@ listEq lst1 lst2 =
         True
         (eqZip lst1 lst2 [])
 
-pythagoreanTriples :: [(Natural, Natural, Natural)]
-pythagoreanTriples =
-  [ (x, y, c)
-  | c <- [1 ..],
-    x <- [1 .. c],
-    y <- [1 .. c],
-    x ^ 2 + y ^ 2 == c ^ 2
-  ]
-
--- primitivePythagoreanTriples :: [(Natural, Natural, Natural)]
--- primitivePythagoreanTriples =
--- let skip_coprimes coprime end = [x | x <- [1 .. end], x `gcd` coprime /= 1]
--- skip_coprimes2 coprime1 coprime2 end = [x | x <- [1 .. end], x `gcd` coprime1 /= 1, x `gcd` coprime2 /= 1]
--- in [(x, y, c) | c <- [1 ..], x <- skip_coprimes c c, y <- skip_coprimes2 x c c, x ^ 2 + y ^ 2 == c ^ 2]
-
-perfectNumbers :: [Natural]
-perfectNumbers =
-  let divisors x = [i | i <- [x - 1, x - 2 .. 1], x `mod` i == 0]
-   in [x | x <- [1 ..], sum (divisors x) == x]
-
+-- totally inefficent but i have no time and brainpower for
+-- figuring out how to do it better
 cantorPairs :: [(Natural, Natural)]
 cantorPairs =
   let reverse_pi :: Natural -> (Natural, Natural)
@@ -78,20 +60,18 @@ main = do
   testEq (listEq [1, 2, 3, 4] [1, 2, 3, 4]) True 1
   testEq (listEq [1, 2, 3] [1, 2, 3, 4]) False 2
   testEq (listEq (repeat 1) ([1, 1, 1, 1] ++ [1 ..])) False 3
-  putStrLn "pythagoreanTriples tests:"
-  let isPythTripple (x, y, c) = x ^ 2 + y ^ 2 == c ^ 2
-  testEq (foldr (&&) True (map isPythTripple (take 20 pythagoreanTriples))) True 1
-
-  let isPerfect x = x == sum [d | d <- [1 .. x - 1], x `mod` d == 0]
-  putStrLn "perfectNumbers tests:"
-  testEq (foldr (&&) True (map isPerfect (take 20 perfectNumbers))) True 1
-
+  let empt :: [Int] = []
+  testEq (listEq empt empt) True 4
+  testEq (listEq [1..] empt) False 5
+  
   putStrLn "cantorPairs tests:"
-  testEq (take 6 cantorPairs) [(0, 0), (0, 1), (1, 0), (0, 2), (1, 1), (2, 0)] 1
-
-  putStrLn "minNorm tests"
-
-  testEq (minNorm [(0.0, 0.001), (pi, 42.0), (-1.0, -1.0)]) 0.0 1
-  testEq (minNorm [(0.0, 0.0), (0.0, 0.0), (-1.0, -1.0)]) 0.0 2
+  let cnt = 100
+  testEq
+    ( map
+        (\(x, y) -> (x ^ 2 + x + 2 * x * y + 3 * y + y ^ 2) `div` 2)
+        (take cnt cantorPairs)
+    )
+    [0 .. ((fromIntegral cnt) - 1)]
+    1
 
   return ()

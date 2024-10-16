@@ -1,6 +1,20 @@
 module Main where
 
 import Numeric.Natural
+import Data.List
+
+f1 :: [Int] -> Int
+f1 xs =
+  let sortedXs = sort xs
+      helper cand lst =
+        case lst of
+          [] -> cand
+          hd : tl -> helper 
+                       (if hd == cand 
+                          then cand + 1 
+                          else cand) 
+                        tl 
+  in helper 0 sortedXs
 
 testEq :: (Eq a, Show a) => a -> a -> Natural -> IO ()
 testEq got expected testNum =
@@ -15,6 +29,8 @@ testEq got expected testNum =
             ++ " Got: "
             ++ (show got)
         )
+
+
 
 merge :: (Ord a) => [a] -> [a] -> [a]
 merge xs ys =
@@ -62,6 +78,12 @@ majElement xs =
 
 main :: IO ()
 main = do
+  putStrLn "f1 tests:"
+  testEq (f1 (take 100 (repeat 0))) 1 1
+  testEq (f1 []) 0 2
+  testEq (f1 [0..999]) 1000 3
+  testEq (f1 ([0] ++ [1] ++ [3..1000])) 2 4 
+  
   putStrLn "merge tests:"
   let (e1, e2) :: ([Int], [Int]) = ([], []) 
   testEq (merge e1 e2) [] 1
@@ -72,7 +94,7 @@ main = do
   testEq (merge sortedLstEven e1) sortedLstEven 3
   testEq (merge sortedLstEven sortedLstOdd) sortedLst 4
   testEq (merge sortedLstOdd sortedLstEven) sortedLst 5
-   
+  testEq (merge [1, 2] [3, 4, 5, 6, 6]) ([1..6] ++ [6]) 6   
 
   putStrLn "count test:"
   testEq (count [1, 2, 3, 4] 1) 1 1
