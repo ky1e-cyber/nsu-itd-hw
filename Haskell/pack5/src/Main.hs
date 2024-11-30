@@ -68,15 +68,29 @@ chainLenghtR2 xs =
              in (fst acc + dist, nxt)
        in fst (foldl f (0.0, hd) tl)
 
+-- № 9
 class Logic a where
   neg :: a -> a
   (&&&) :: a -> a -> a
   (|||) :: a -> a -> a
 
+instance Logic String where
+  neg "" = "42"
+  neg _ = ""
+  "" &&& _ = ""
+  (_ : _) &&& s = s
+  _ ||| s = s
+
+-- № 8
+newtype Vec3
+  = Vec3 (Int, Int, Int)
+
 main :: IO ()
 main = do
   -- № 1
   -- № 5
+  putStrLn "chainLenghtR2 tests:"
+
   let eps = 0.0000000001
   testClose
     (chainLenghtR2 (listArray (0, 0) ([] :: [(Double, Double)])))
@@ -113,5 +127,18 @@ main = do
     22506.17872083843
     eps
     3
+
+  putStrLn "Logic String tests:"
+  let false = ""
+  testEq (neg "non empty") false 1
+  testEq (neg false /= false) True 2
+  testEq (false &&& "non-empty") false 3
+  testEq ("69" &&& false) false 4
+  testEq ("1111" &&& "111" /= false) True 5
+  testEq (false &&& false) false 6
+  testEq (false ||| "non-empty" /= false) True 7
+  testEq ("69" ||| false /= false) True 8
+  testEq ("1111" ||| "111" /= false) True 9
+  testEq (false ||| false) false 10
 
   return ()
