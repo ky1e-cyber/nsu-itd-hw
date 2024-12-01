@@ -43,19 +43,10 @@ arI =
       ((2, 3), 4)
     ]
 
+-- № 5
 normR2 :: (Double, Double) -> (Double, Double) -> Double
 normR2 (x1, y1) (x2, y2) =
   sqrt ((x2 - x1) ** 2 + (y2 - y1) ** 2)
-
-window :: [[a]] -> Int -> [a] -> [[a]]
-window acc windowSize xs =
-  case xs of
-    [] -> reverse acc
-    _ ->
-      window
-        (take (windowSize) xs : acc)
-        windowSize
-        (drop windowSize xs)
 
 chainLenghtR2 :: (Ix i) => Array i (Double, Double) -> Double
 chainLenghtR2 xs =
@@ -68,6 +59,39 @@ chainLenghtR2 xs =
              in (fst acc + dist, nxt)
        in fst (foldl f (0.0, hd) tl)
 
+-- № 6
+meanNeighborsLst :: [Double] -> [Double]
+meanNeighborsLst xs =
+  let f prevElem acc xs' =
+        case xs' of
+          [] -> acc
+          x1 : x2 : _ -> f x1 ((prevElem + x1 + x2) / 3.0 : acc) (drop 1 xs')
+          x1 : [] -> f x1 ((prevElem + x1) / 2.0 : acc) (drop 1 xs')
+   in case xs of
+        [] -> []
+        x : [] -> [x]
+        x1 : x2 : tl -> reverse (f x1 [(x1 + x2) / 2.0] (drop 1 xs))
+
+meanNeighbors :: Array Int Double -> Array Int Double
+meanNeighbors arr =
+  listArray (bounds arr) (meanNeighborsLst (elems arr))
+
+-- № 8
+newtype Vec3d
+  = Vec3d (Int, Int, Int)
+  deriving (Show, Eq)
+
+newtype Matrix
+  = Matrix (Array (Int, Int) Int)
+  deriving (Show, Eq)
+
+prod :: Matrix -> Vec3d -> Vec3d
+prod (Matrix mat) (Vec3d (x1, x2, x3)) =
+  let y1 = x1 * (mat ! (0, 0)) + x2 * (mat ! (0, 1)) + x3 * (mat ! (0, 2))
+      y2 = x1 * (mat ! (1, 0)) + x2 * (mat ! (1, 1)) + x3 * (mat ! (1, 2))
+      y3 = x1 * (mat ! (2, 0)) + x2 * (mat ! (2, 1)) + x3 * (mat ! (2, 2))
+   in Vec3d (y1, y2, y3)
+
 -- № 9
 class Logic a where
   neg :: a -> a
@@ -79,19 +103,27 @@ instance Logic String where
   neg _ = ""
   "" &&& _ = ""
   (_ : _) &&& s = s
-  _ ||| s = s
-
--- № 8
-newtype Vec3
-  = Vec3 (Int, Int, Int)
+  "" ||| s = s
+  s ||| "" = s
+  s ||| _ = s
 
 main :: IO ()
 main = do
-  -- № 1
-  -- № 5
   putStrLn "chainLenghtR2 tests:"
 
+  let arr =
+        listArray
+          (1, 5)
+          ( [ ((-5.23), 4.2),
+              (2.456, 13.234),
+              (11241, 211.2),
+              ((-1), 0),
+              (8.3, 3.8)
+            ] ::
+              [(Double, Double)]
+          )
   let eps = 0.0000000001
+
   testClose
     (chainLenghtR2 (listArray (0, 0) ([] :: [(Double, Double)])))
     0.0
@@ -110,23 +142,105 @@ main = do
     eps
     2
 
-  let arr =
-        listArray
-          (1, 5)
-          ( [ ((-5.23), 4.2),
-              (2.456, 13.234),
-              (11241, 211.2),
-              ((-1), 0),
-              (8.3, 3.8)
-            ] ::
-              [(Double, Double)]
-          )
-
   testClose
     (chainLenghtR2 arr)
     22506.17872083843
     eps
     3
+
+  putStrLn "meanNeighbors tests:"
+
+  let emptyArr = listArray (0, -1) ([] :: [Double])
+  let singleArr = listArray (0, 0) ([1.0] :: [Double])
+  let twoArr = listArray (0, 1) ([0.42, 1.0] :: [Double])
+  let twoRes = listArray (0, 1) ([0.71, 0.71] :: [Double])
+  let indexedArr = listArray (5, 8) ([1.0, 1.69, 42.1, 1.21] :: [Double])
+  let indexedRes = listArray (5, 8) ([1.345, 14.93, 15.0, 21.655] :: [Double])
+  testEq (meanNeighbors emptyArr) emptyArr 1
+  testEq (meanNeighbors singleArr) singleArr 2
+  testEq (meanNeighbors twoArr) twoRes 3
+  testEq (meanNeighbors indexedArr) indexedRes 4
+
+  putStrLn "Matrix * Vec3d product tests:"
+
+  let ident =
+        Matrix
+          ( array
+              ((0, 0), (2, 2))
+              [ ((0, 0), 1),
+                ((0, 1), 0),
+                ((0, 2), 0),
+                ((1, 0), 0),
+                ((1, 1), 1),
+                ((1, 2), 0),
+                ((2, 0), 0),
+                ((2, 1), 0),
+                ((2, 2), 1)
+              ]
+          )
+
+  let zrot90 =
+        Matrix
+          ( array
+              ((0, 0), (2, 2))
+              [ ((0, 0), 0),
+                ((0, 1), -1),
+                ((0, 2), 0),
+                ((1, 0), 1),
+                ((1, 1), 0),
+                ((1, 2), 0),
+                ((2, 0), 0),
+                ((2, 1), 0),
+                ((2, 2), 1)
+              ]
+          )
+
+  let mat =
+        Matrix
+          ( array
+              ((0, 0), (2, 2))
+              [ ((0, 0), 2),
+                ((0, 1), 4),
+                ((0, 2), 6),
+                ((1, 0), 4),
+                ((1, 1), 5),
+                ((1, 2), 6),
+                ((2, 0), 3),
+                ((2, 1), 1),
+                ((2, 2), -2)
+              ]
+          )
+
+  let zeroMat =
+        Matrix
+          ( array
+              ((0, 0), (2, 2))
+              [ ((0, 0), 0),
+                ((0, 1), 0),
+                ((0, 2), 0),
+                ((1, 0), 0),
+                ((1, 1), 0),
+                ((1, 2), 0),
+                ((2, 0), 0),
+                ((2, 1), 0),
+                ((2, 2), 0)
+              ]
+          )
+
+  let b1 = Vec3d (1, 0, 0)
+  let b2 = Vec3d (0, 1, 0)
+  let b3 = Vec3d (0, 0, 1)
+  let vec = Vec3d (4, -2, 3)
+  let zeroVec = Vec3d (0, 0, 0)
+
+  testEq (prod ident b1) b1 1
+  testEq (prod ident b2) b2 2
+  testEq (prod ident b3) b3 3
+  testEq (prod ident vec) vec 4
+  testEq (prod zrot90 b1) b2 5
+  testEq (prod mat vec) (Vec3d (18, 24, 4)) 6
+  testEq (prod zeroMat b1) zeroVec 7
+  testEq (prod zeroMat vec) zeroVec 8
 
   putStrLn "Logic String tests:"
   let false = ""
