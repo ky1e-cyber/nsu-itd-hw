@@ -31,6 +31,7 @@ testClose got expected eps testNum =
             ++ (show got)
         )
 
+-- № 0
 arI :: Array (Int, Int) Int
 arI =
   array
@@ -42,6 +43,33 @@ arI =
       ((2, 2), 2),
       ((2, 3), 4)
     ]
+
+-- № 1
+sum1 :: Int
+sum1 = foldl (+) 0 (elems arI)
+
+sum2 :: Int
+sum2 = foldl1 (+) arI
+
+sum3 :: Int
+sum3 = sum arI
+
+-- № 2
+sum4 :: Int
+sum4 =
+  foldl (\acc nxt -> acc + (arI ! nxt)) 0 (indices arI)
+
+-- № 3
+indEq :: [(Int, Int)]
+indEq =
+  filter (\(i1, i2) -> i1 + i2 == arI ! (i1, i2)) (indices arI)
+
+vals :: [Int]
+vals = map (\ind -> arI ! ind) indEq
+
+-- № 4
+replaced :: Array (Int, Int) Int
+replaced = arI // [(i, 77) | i <- indEq]
 
 -- № 5
 normR2 :: (Double, Double) -> (Double, Double) -> Double
@@ -109,6 +137,17 @@ instance Logic String where
 
 main :: IO ()
 main = do
+  putStrLn "Tasks 1 - 4:"
+  putStrLn ("arI = " ++ (show arI))
+  putStrLn "Sums: "
+  putStrLn ("using elems = " ++ (show sum1))
+  putStrLn ("using foldl1 = " ++ (show sum2))
+  putStrLn ("using sum = " ++ (show sum3))
+  putStrLn ("using indicies with array access = " ++ (show sum4))
+  putStrLn "arI ! (i, j) == i + j:"
+  putStrLn ("filtered when cond is true = " ++ (show vals))
+  putStrLn ("replaced with 77 = " ++ (show replaced))
+
   putStrLn "chainLenghtR2 tests:"
 
   let arr =
