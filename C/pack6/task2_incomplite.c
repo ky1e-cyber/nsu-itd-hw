@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define OUTPUT_HACK
+
 #define print_error(errmsg)                        \
   do {                                             \
     fprintf(stderr, "%c%s%c", '[', __func__, ']'); \
@@ -69,7 +71,8 @@ arraylist_t* arraylist_from_array(arraylist_t* list,
 
   for (size_t i = 0; i < size; i++) {
     list->arr[i] = (arraylist_node_t){.next_ind = array[i].next_ind};
-    memcpy(&(list->arr[i].val), array[i].val, strlen(array[i].val));
+    memcpy(list->arr[i].val, array[i].val,
+           (strlen(array[i].val) + 1) * sizeof(char));
   }
 
   list->arr_len = size;
@@ -127,7 +130,7 @@ arraylist_node_t* arraylist_insert(arraylist_t* list,
   if (ind == -1 && list->head_ind == -1) {
     list->arr_len = 1;
     list->arr[0] = (arraylist_node_t){.next_ind = -1};
-    memcpy(&(list->arr[0].val), val, strlen(val) * sizeof(char));
+    memcpy(list->arr[0].val, val, (strlen(val) + 1) * sizeof(char));
     list->head_ind = 0;
 
     return list->arr;
@@ -156,7 +159,7 @@ arraylist_node_t* arraylist_insert(arraylist_t* list,
   list->arr_len++;
 
   list->arr[new_arr_ind] = (arraylist_node_t){.next_ind = -1};
-  memcpy(&(list->arr[new_arr_ind].val), val, strlen(val) * sizeof(char));
+  memcpy(list->arr[new_arr_ind].val, val, (strlen(val) + 1) * sizeof(char));
 
   if (ind == -1) {
     list->arr[new_arr_ind].next_ind = list->head_ind;
@@ -180,6 +183,10 @@ result_t arraylist_remove(arraylist_t* list, int ind) {
       return Err;
     }
 
+#if defined(OUTPUT_HACK)
+    puts(list->arr[list->head_ind].val);
+#endif
+
     const int nxt = list->arr[list->head_ind].next_ind;
     list->head_ind = nxt;
 
@@ -200,6 +207,10 @@ result_t arraylist_remove(arraylist_t* list, int ind) {
     print_error("trying to delete non existing node");
     return Err;
   }
+
+#if defined(OUTPUT_HACK)
+  puts(list->arr[nxt].val);
+#endif
 
   int new_nxt = list->arr[nxt].next_ind;
   node->next_ind = new_nxt;
@@ -235,9 +246,33 @@ int main() {
       scanf("%d", &ind);
 
       init[j] = (arraylist_init_pair_t){.next_ind = ind};
-      memcpy(&(init[j].val), buf, (strlen(buf) + 1) * sizeof(char));
+      memcpy(init[j].val, buf, (strlen(buf) + 1) * sizeof(char));
+    }
 
-      
+    arraylist_t arrlst;
+    arraylist_from_array(&arrlst, init, f, n);
+
+    for (int j = 0; j < q; j++) {
+      int op, ind;
+      scanf("%d %d", &op, &ind);
+      char buf[STRVAL_SIZE];
+      if (op == 0) {
+        (void)fgetc(stdin);  // eat space
+        (void)fgets(buf, STRVAL_SIZE, stdin);
+      }
+
+      switch (op) {
+        case 0: {
+        }  // C99 moment
+          (void)arraylist_insert(&arrlst, buf, ind);
+          printf("%d\n", ind + 1);
+          break;
+        case 1:
+          (void)arraylist_remove(&arrlst, ind);
+          break;
+        default:
+          break;
+      }
     }
   }
 
