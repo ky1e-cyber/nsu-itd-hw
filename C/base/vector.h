@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define VECTOR_INIT_SIZE 16
 #define VECTOR_GROW_FACTOR 2
@@ -25,6 +26,8 @@ void* vector_basepointer(vector_ptr_t vec);
 #define vector_make(T) vector_make_sized(sizeof(T))
 
 void vector_free(vector_ptr_t vec);
+
+bool vector_isempty(vector_ptr_t vec);
 
 vector_ptr_t vector_make_sized(size_t elem_size);
 
