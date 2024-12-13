@@ -1,124 +1,121 @@
+#include <assert.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define STRVAL_SIZE 8
-#define TABLE_SIZE 10000 + 1
 
-typedef struct _string_list_node {
-  char str[STRVAL_SIZE];
-  struct _string_list_node* next;
-} string_list_node_t;
+#define VECTOR_INIT_SIZE 16
+#define VECTOR_GROW_FACTOR 2
 
-typedef struct {
-  string_list_node_t* head;
-  string_list_node_t* maybe_last;
-} string_list_t;
+typedef struct __attribute__((aligned(8))) {
+  size_t capacity;
+  size_t length;
+} vector_header_t;
 
-typedef struct {
-  uint64_t ind;
-  string_list_t list;
-} item_t;
+typedef vector_header_t* vector_ptr_t;
 
-void string_list_node_init(string_list_node_t* node, char* src) {
-  node->next = NULL;
-  size_t src_size = (strlen(src) + 1) * sizeof(char);
-  (void)memcpy(node->str, src, src_size);
-}
+size_t vector_get_length(vector_ptr_t vec);
 
-string_list_node_t* string_list_node_from_str(char* src) {
-  string_list_node_t* mem =
-      (string_list_node_t*)malloc(sizeof(string_list_node_t));
+size_t vector_get_capacity(vector_ptr_t vec);
+
+void vector_init(vector_ptr_t vec);
+
+void* vector_basepointer(vector_ptr_t vec);
+
+#define vector_make(T) vector_make_sized(sizeof(T))
+
+void vector_free(vector_ptr_t vec);
+
+vector_ptr_t vector_make_sized(size_t elem_size);
+
+vector_ptr_t vector_grow_sized(vector_ptr_t vec, size_t elem_size);
+
+vector_ptr_t vector_append_fake(vector_ptr_t vec, size_t elem_size);
+
+#define vector_grow(T, vec) vector_grow_sized(vec, sizeof(T))
+
+#define vector_append(T, vec, elem)                                \
+  ({                                                               \
+    vector_ptr_t _grown = vector_append_fake(vec, sizeof(T));      \
+    if (_grown != NULL) {                                          \
+      ((T*)vector_basepointer(_grown))[_grown->length - 1] = elem; \
+    }                                                              \
+    _grown;                                                        \
+  })
+
+#define vector_get_array(T, vec) (T*)vector_basepointer(vec)
+
+#define vector_get(T, vec, ind) (vector_get_array(T, vec))[ind]
+
+vector_ptr_t vector_make_sized(size_t elem_size) {
+  vector_ptr_t mem = (vector_ptr_t)malloc(sizeof(vector_header_t) +
+                                          VECTOR_INIT_SIZE * elem_size);
   if (mem == NULL)
     return NULL;
-
-  string_list_node_init(mem, src);
+  vector_init(mem);
 
   return mem;
 }
 
-void string_list_init(string_list_t* lst) {
-  lst->head = NULL;
-  lst->maybe_last = NULL;
-}
-
-void string_list_free(string_list_t* lst) {
-  string_list_node_t* node = lst->head;
-  while (node != NULL) {
-    string_list_node_t* nxt = node->next;
-    free(node);
-    node = nxt;
-  }
-}
-
-static inline string_list_node_t* string_list_last(string_list_t* lst) {
-  if (lst->maybe_last != NULL)
-    return lst->maybe_last;
-
-  string_list_node_t* node = lst->head;
-  if (node == NULL)
+vector_ptr_t vector_grow_sized(vector_ptr_t vec, size_t elem_size) {
+  size_t new_cap = vec->capacity * VECTOR_GROW_FACTOR;
+  assert(vec->capacity * elem_size < new_cap * elem_size);
+  vector_ptr_t new_mem = (vector_ptr_t)realloc(vec, new_cap * elem_size);
+  if (new_mem == NULL)
     return NULL;
+  new_mem->capacity = new_cap;
 
-  string_list_node_t* nxt = node->next;
-  while (nxt != NULL) {
-    node = nxt;
-    nxt = nxt->next;
-  }
-
-  return node;
+  return new_mem;
 }
 
-string_list_node_t* string_list_append(string_list_t* lst, char* str) {
-  string_list_node_t* new_node = string_list_node_from_str(str);
-  if (new_node == NULL)
-    return NULL;
-
-  string_list_node_t* last = string_list_last(lst);
-  if (last == NULL) {
-    lst->head = new_node;
-  } else {
-    last->next = new_node;
+vector_ptr_t vector_append_fake(vector_ptr_t vec, size_t elem_size) {
+  if (vec->capacity <= vec->length) {
+    vec = vector_grow_sized(vec, elem_size);
+    if (vec == NULL)
+      return NULL;
   }
 
-  return new_node;
+  vec->length++;
+
+  return vec;
 }
 
-static inline void string_list_print(string_list_t* lst, uint64_t ind) {
-  string_list_node_t* node = lst->head;
-
-  while (node != NULL) {
-    printf("%llu ", (unsigned long long)ind);
-    puts(node->str);
-    node = node->next;
-  }
+size_t vector_get_length(vector_ptr_t vec) {
+  return vec->length;
 }
+
+size_t vector_get_capacity(vector_ptr_t vec) {
+  return vec->capacity;
+}
+
+void vector_init(vector_ptr_t vec) {
+  vec->capacity = VECTOR_INIT_SIZE;
+  vec->length = 0;
+}
+
+void* vector_basepointer(vector_ptr_t vec) {
+  return (void*)(vec + 1);
+}
+
+void vector_free(vector_ptr_t vec) {
+  free(vec);
+}
+
+bool vector_isempty(vector_ptr_t vec) {
+  return vector_get_length(vec) == 0;
+}
+
+typedef struct {
+  uint64_t key;
+  char value[STRVAL_SIZE];
+} item_t;
 
 int main() {
-  string_list_t* table =
-      (string_list_t*)calloc(TABLE_SIZE, sizeof(string_list_t));
-
-  int n;
-  scanf("%d", &n);
-
-  size_t max_ind = 0;
-
-  for (int i = 0; i < n; i++) {
-    uint64_t ind;
-    (void)scanf("%llu", (unsigned long long int*)&ind);
-    if (max_ind < ind)
-      max_ind = ind;
-
-    (void)fgetc(stdin);  // eat space
-    char buf[STRVAL_SIZE];
-    (void)scanf("%s", buf);
-    (void)string_list_append(table + ind, buf);
-  }
-
-  for (size_t i = 0; i <= max_ind; i++) {
-    string_list_print(table + i, i);
-  }
+  size_t n;
 
   return 0;
 }
