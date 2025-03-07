@@ -9,18 +9,18 @@ module Main
   )
 where
 
-import qualified Barans
+import Barans qualified
 import Control.Monad
 import Data.Either
 import Data.Maybe
 
 findMothernalGrandFather :: Barans.Sheep -> Maybe Barans.Sheep
-findMothernalGrandFather s =
-  Barans.mother s >>= Barans.father
+findMothernalGrandFather =
+  Barans.mother >=> Barans.father
 
 findMothernalGrandGrandFather :: Barans.Sheep -> Maybe Barans.Sheep
-findMothernalGrandGrandFather s =
-  findMothernalGrandGrandFather s >>= Barans.father
+findMothernalGrandGrandFather =
+  findMothernalGrandGrandFather >=> Barans.father
 
 findAllParents :: Barans.Sheep -> [Barans.Sheep]
 findAllParents s =
@@ -37,8 +37,8 @@ selectedBarans :: [Barans.Sheep]
 selectedBarans = ["i3", "i5", "i6", "i9", "i12"]
 
 findSelectedFather :: Barans.Sheep -> Maybe Barans.Sheep
-findSelectedFather s =
-  Barans.father s >>= (\it -> lookup it $ map (\x -> (x, x)) selectedBarans)
+findSelectedFather =
+  Barans.father >=> (\it -> lookup it $ map (\x -> (x, x)) selectedBarans)
 
 findNearestSelectedFather' ::
   Barans.Sheep -> Either (Maybe Barans.Sheep) Barans.Sheep
@@ -50,8 +50,8 @@ findNearestSelectedFather' s =
 
 findNearestSelectedFather'' ::
   Barans.Sheep -> Either (Maybe Barans.Sheep) Barans.Sheep
-findNearestSelectedFather'' s =
-  findNearestSelectedFather' s >>= findNearestSelectedFather''
+findNearestSelectedFather'' =
+  findNearestSelectedFather' >=> findNearestSelectedFather''
 
 findNearestSelectedFather :: Barans.Sheep -> Maybe Barans.Sheep
 findNearestSelectedFather s =
