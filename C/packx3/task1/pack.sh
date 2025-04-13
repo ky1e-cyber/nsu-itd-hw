@@ -2,4 +2,4 @@
 
 set -ex
 
-zip -r packx3.zip *.c c.sh
+zip -r task1.zip *.c c.sh
