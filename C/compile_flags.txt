@@ -1,1 +1,1 @@
--std=gnu99 -Wall -Wextra -Wfloat-equal -g -fsanitize=undefined -fsanitize=address
+-std=gnu11 -Wall -Wextra -Wfloat-equal -g -fsanitize=undefined -fsanitize=address
