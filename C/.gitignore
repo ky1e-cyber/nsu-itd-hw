@@ -1,3 +1,5 @@
 task
 *.dSYM/
 input.txt
+output.txt
+*.zip
