@@ -7,5 +7,5 @@ local:
 
 myblas: myblas.c
 	mkdir -p ./myblas
-	gcc myblas.c -shared -fPIC -o ./myblas/libopenblas.dylib
+	gcc myblas.c -shared -fPIC -o ./myblas/libopenblas.so
 

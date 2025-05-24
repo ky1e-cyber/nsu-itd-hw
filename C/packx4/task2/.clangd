@@ -1,2 +1,0 @@
-CompileFlags:
-	Add: [-std=gnu11, -Wall, -I/Users/sxrose/openblas/include, -L/Users/sxrose/openblas/lib]
