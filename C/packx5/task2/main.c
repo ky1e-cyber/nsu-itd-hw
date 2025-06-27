@@ -1,6 +1,3 @@
-#if !defined(H_BASE)
-#define H_BASE
-
 #include <assert.h>
 #include <stdalign.h>
 #include <stdarg.h>
@@ -285,6 +282,13 @@ m_macro_like size_t vector_bytesize_sized(size_t elem_sz, size_t cnt) {
     vector_bytesize_sized(sizeof(T), cnt__);    \
   })
 
+#define vector_make_reserved(T, sz, alloc, fail_callback)              \
+  ({                                                                   \
+    m_assert_istype(T);                                                \
+    alloc_t alloc__ = alloc;                                           \
+    vector_make_reserved_sized(sz, sizeof(T), alloc__, fail_callback); \
+  })
+
 #define vector_make(T, alloc, fail_callback) /* -> vector_ptr_t */ \
   ({                                                               \
     m_assert_istype(T);                                            \
@@ -386,11 +390,12 @@ m_macro_like void vector_clear(vector_ptr_t vec) {
   vec->size = 0;
 }
 
-static vector_ptr_t vector_make_sized(size_t elem_sz,
-                                      alloc_t alloc,
-                                      void (*fail_callback)(void)) {
-  vector_ptr_t vec = (vector_ptr_t)alloc.acquire(
-      vector_bytesize_sized(elem_sz, VECTOR_INIT_CAPACITY));
+static vector_ptr_t vector_make_reserved_sized(size_t sz,
+                                               size_t elem_sz,
+                                               alloc_t alloc,
+                                               void (*fail_callback)(void)) {
+  vector_ptr_t vec =
+      (vector_ptr_t)alloc.acquire(vector_bytesize_sized(elem_sz, sz));
   if (vec == NULL) {
     fail_callback();
     return NULL;
@@ -401,6 +406,13 @@ static vector_ptr_t vector_make_sized(size_t elem_sz,
   memcpy(vec, &vec_hd, sizeof(vector_header_t));
 
   return vec;
+}
+
+static vector_ptr_t vector_make_sized(size_t elem_sz,
+                                      alloc_t alloc,
+                                      void (*fail_callback)(void)) {
+  return vector_make_reserved_sized(VECTOR_INIT_CAPACITY, elem_sz, alloc,
+                                    fail_callback);
 }
 
 static vector_ptr_t vector_grow_sized(vector_ptr_t vec, size_t elem_sz) {
@@ -421,4 +433,121 @@ static vector_ptr_t vector_grow_sized(vector_ptr_t vec, size_t elem_sz) {
   return new_mem;
 }
 
-#endif
+static noreturn void error_vector() {
+  error("Vector alloc error\n");
+}
+
+typedef struct {
+  size_t v_sz;
+  vector_ptr_t /* [size_t] */* adjs;
+} graph_t;
+
+typedef struct {
+  size_t* data;
+  size_t size;
+  size_t front;
+  size_t back;
+} queue_t;
+
+static void queue_init(queue_t* q, size_t sz) {
+  size_t* data = (size_t*)malloc(sizeof(size_t) * sz);
+
+  if (data == NULL) exit(1);
+
+  q->data = data;
+  q->size = sz;
+  q->front = 0;
+  q->back = 0;
+  
+}
+
+static bool queue_empty(queue_t* q) {
+  return q->front == q->back;
+}
+
+static size_t queue_pop(queue_t* q) {
+  size_t res = q->data[q->front];
+  q->front++;
+  return res;
+}
+
+static void queue_push(queue_t* q, size_t elem) {
+  q->data[q->back++] = elem;
+}
+
+static void graph_init(graph_t* g, size_t v_sz) {
+  vector_ptr_t* adjs = (vector_ptr_t*)malloc(sizeof(vector_ptr_t) * v_sz);
+  if (adjs == NULL)
+    exit(1);
+
+  for (size_t i = 0; i < v_sz; i++)
+    adjs[i] = vector_make(size_t, alloc_default, error_vector);
+
+  g->adjs = adjs;
+  g->v_sz = v_sz;
+}
+
+static void graph_add_edge(graph_t* g, size_t from, size_t to) {
+  g->adjs[from] = vector_push_back(size_t, g->adjs[from], to);
+}
+
+static void graph_destroy(graph_t* g) {
+  for (size_t i = 0; i < g->v_sz; i++)
+    vector_release(g->adjs[i]);
+  free(g->adjs);
+}
+
+int* bfs_find_dist(graph_t* g) {
+  const size_t n = g->v_sz;
+
+  int* dsts = (int*)malloc(sizeof(int) * n);
+  if (dsts == NULL)
+    exit(1);
+  dsts[0] = 0;
+  for (size_t i = 1; i < n; i++)
+    dsts[i] = -1;
+
+  queue_t queue;
+  queue_init(&queue, n * 2);
+  queue_push(&queue, 0);
+
+  while (!queue_empty(&queue)) {
+    size_t v = queue_pop(&queue);
+    vector_ptr_t adj = g->adjs[v];
+
+    for (size_t i = 0; i < vector_size(adj); i++) {
+      size_t u = vector_data(size_t, adj)[i];
+      if (dsts[u] == -1) {
+        dsts[u] = dsts[v] + 1;
+        queue_push(&queue, u);
+      }
+    }
+  }
+
+  return dsts;
+}
+
+int main() {
+  size_t m, n;
+  scanf("%lu %lu", &n, &m);
+
+  graph_t g;
+  graph_init(&g, n);
+
+  for (size_t i = 0; i < m; i++) {
+    size_t from, to;
+    scanf("%lu %lu", &from, &to);
+    graph_add_edge(&g, from - 1, to - 1);
+  }
+
+  int* dsts = bfs_find_dist(&g);
+
+  for (size_t i = 0; i < n; i++) {
+    printf("%d\n", dsts[i]);
+  }
+
+  graph_destroy(&g);
+  free(dsts);
+
+  return 0;
+}

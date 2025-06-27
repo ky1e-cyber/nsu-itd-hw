@@ -1,5 +1,8 @@
-#if !defined(H_BASE)
-#define H_BASE
+#define VECTOR_INIT_CAPACITY 4
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stdnoreturn.h>
 
 #include <assert.h>
 #include <stdalign.h>
@@ -421,4 +424,117 @@ static vector_ptr_t vector_grow_sized(vector_ptr_t vec, size_t elem_sz) {
   return new_mem;
 }
 
-#endif
+static noreturn void error_vector() {
+  error("Vector alloc error\n");
+}
+
+typedef struct {
+  size_t v_sz;
+  vector_ptr_t* adjs;
+} graph_t;
+
+// m_macro_like
+
+typedef struct {
+  enum { WALL, SPACE } tag;
+  int num;
+} mazecell_t;
+
+m_macro_like size_t parse_maze(size_t n, mazecell_t* out) {
+  size_t cnt = 0;
+
+  for (size_t i = 0; i < n; i++) {
+    int c = getc(stdin);
+    assert(c == '\n');
+
+    for (size_t j = 0; j < n; j++) {
+      int c = getc(stdin);
+      out[i * n + j] = c == '*' ? (mazecell_t){.tag = WALL}
+                                : (mazecell_t){.tag = SPACE, .num = cnt++};
+    }
+  }
+
+  return cnt;
+}
+
+static graph_t graph_from_maze(mazecell_t* maze, size_t n, size_t free_cnt) {
+  vector_ptr_t* adjs = (vector_ptr_t*)malloc(free_cnt * sizeof(vector_ptr_t));
+
+  for (size_t i = 0; i < free_cnt; i++) {
+    adjs[i] = vector_make(int, alloc_default, error_vector);
+  }
+
+  for (size_t row = 0; row < (n - 1); row++) {
+    for (size_t col = 1; col < (n - 1); col++) {
+      mazecell_t cur = maze[row * n + col];
+      mazecell_t right = maze[row * n + col + 1];
+      mazecell_t down = maze[(row + 1) * n + col];
+      if (cur.tag == SPACE) {
+        if (right.tag == SPACE) {
+          adjs[cur.num] = vector_push_back(int, adjs[cur.num], right.num);
+          adjs[right.num] = vector_push_back(int, adjs[right.num], cur.num);
+        }
+
+        if (down.tag == SPACE) {
+          adjs[cur.num] = vector_push_back(int, adjs[cur.num], down.num);
+          adjs[down.num] = vector_push_back(int, adjs[down.num], cur.num);
+        }
+      }
+    }
+  }
+
+  return (graph_t){.v_sz = free_cnt, .adjs = adjs};
+}
+
+static void graph_destroy(graph_t* g) {
+  for (size_t i = 0; i < g->v_sz; i++)
+    vector_release(g->adjs[i]);
+  free(g->adjs);
+}
+
+static void dfs(graph_t g, int s, bool* visited) {
+  assert(!visited[s]);
+  visited[s] = true;
+
+  vector_ptr_t adj = g.adjs[s];
+
+  for (size_t i = 0; i < vector_size(adj); i++) {
+    int v = vector_data(int, adj)[i];
+
+    if (visited[v])
+      continue;
+
+    dfs(g, v, visited);
+  }
+}
+
+int main() {
+  size_t n;
+  scanf("%lu", &n);
+
+  mazecell_t* maze = (mazecell_t*)malloc(sizeof(mazecell_t) * n * n);
+  if (maze == NULL)
+    error("malloc error\n");
+  size_t nodes_sz = parse_maze(n, maze);
+
+  graph_t g = graph_from_maze(maze, n, nodes_sz);
+  free(maze);
+
+  bool* visited = (bool*)calloc(g.v_sz, sizeof(bool));
+
+  int areas_cnt = 0;
+
+  for (size_t i = 0; i < g.v_sz; i++) {
+    if (!visited[i]) {
+      dfs(g, (int)i, visited);
+      areas_cnt++;
+    }
+  }
+
+  free(visited);
+  graph_destroy(&g);
+
+  printf("%d\n", areas_cnt - 1);
+
+  return 0;
+}

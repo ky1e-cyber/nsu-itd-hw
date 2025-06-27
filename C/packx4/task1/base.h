@@ -1,14 +1,12 @@
 #if !defined(H_BASE)
 #define H_BASE
 
-#include <assert.h>
 #include <stdalign.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdnoreturn.h>
 #include <string.h>
 
 #define WORDSIZE (sizeof(size_t))
@@ -72,7 +70,8 @@
 
 #define m_mul_overflow(x, y) m_op_overflow__(x, y, __builtin_mul_overflow_p)
 
-#define m_macro_like static inline __attribute__((always_inline))
+#define m_macro_like \
+  static inline __attribute__((always_inline))
 
 #define m_macro_like_const static const
 
@@ -92,7 +91,7 @@
 
 #define m_unreachable __builtin_unreachable()
 
-static noreturn void error(char* fmt, ...) {
+static void error(char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr, fmt, ap);
@@ -135,6 +134,8 @@ typedef struct __attribute__((aligned(MAX_ALIGNMENT))) {
 
 typedef arena_header_t* arena_ptr_t;
 
+arena_ptr_t arena_make(size_t sz, alloc_t alloc, void (*fail_callback)(void));
+
 m_macro_like const alloc_t* arena_get_allocator(arena_ptr_t arena) {
   return &arena->allocator;
 }
@@ -155,9 +156,7 @@ m_macro_like bool arena_fits(arena_ptr_t arena, size_t sz) {
   return (arena->size - arena->pos) >= sz;
 }
 
-static arena_ptr_t arena_make(size_t sz,
-                              alloc_t alloc,
-                              void (*fail_callback)(void)) {
+arena_ptr_t arena_make(size_t sz, alloc_t alloc, void (*fail_callback)(void)) {
   arena_ptr_t arena = (arena_ptr_t)alloc.acquire(sizeof(arena_header_t) + sz);
 
   if (arena == NULL) {
@@ -296,7 +295,7 @@ m_macro_like alloc_t vector_get_allocator(vector_ptr_t vec) {
   return vec->allocator;
 }
 
-static void vector_release(vector_ptr_t vec) {
+void vector_release(vector_ptr_t vec) {
   vector_get_allocator(vec).release(vec);
 }
 
@@ -386,9 +385,9 @@ m_macro_like void vector_clear(vector_ptr_t vec) {
   vec->size = 0;
 }
 
-static vector_ptr_t vector_make_sized(size_t elem_sz,
-                                      alloc_t alloc,
-                                      void (*fail_callback)(void)) {
+vector_ptr_t vector_make_sized(size_t elem_sz,
+                               alloc_t alloc,
+                               void (*fail_callback)(void)) {
   vector_ptr_t vec = (vector_ptr_t)alloc.acquire(
       vector_bytesize_sized(elem_sz, VECTOR_INIT_CAPACITY));
   if (vec == NULL) {
@@ -403,7 +402,7 @@ static vector_ptr_t vector_make_sized(size_t elem_sz,
   return vec;
 }
 
-static vector_ptr_t vector_grow_sized(vector_ptr_t vec, size_t elem_sz) {
+vector_ptr_t vector_grow_sized(vector_ptr_t vec, size_t elem_sz) {
   const size_t old_cap = vector_capacity(vec);
   const size_t new_cap = old_cap * VECTOR_GROW_FACTOR;
   const alloc_t alloc = vector_get_allocator(vec);

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdnoreturn.h>
 
 typedef enum CBLAS_ORDER {
   CblasRowMajor = 101,
@@ -18,7 +17,7 @@ typedef enum CBLAS_TRANSPOSE {
 
 typedef int MKL_INT;
 
-static noreturn void not_supported() {
+static void not_supported() {
   fprintf(stderr, "Not supported\n ");
   exit(1);
 }
